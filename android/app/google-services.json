@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1010633075142",
+    "project_id": "hivesolar-staging-10f3b",
+    "storage_bucket": "hivesolar-staging-10f3b.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1010633075142:android:74ddbbfecacd3f10c82ac7",
+        "android_client_info": {
+          "package_name": "com.hive.hivesolar"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyADIBd16FAuBqz4vujHC68ibz4u_Lewh5I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
