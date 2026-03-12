@@ -41,53 +41,54 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyD--EKLO_fHi09ICNb0IHiNMe1Kg8tam1Y',
-    appId: '1:614344629280:web:04428638c957bd7c683045',
-    messagingSenderId: '614344629280',
-    projectId: 'artmini-f5ca4',
-    authDomain: 'artmini-f5ca4.firebaseapp.com',
-    databaseURL: 'https://artmini-f5ca4-default-rtdb.firebaseio.com',
-    storageBucket: 'artmini-f5ca4.firebasestorage.app',
-    measurementId: 'G-NB86BECGK2',
+    apiKey: 'AIzaSyAsxVBi51plefaG4NxiiOWmjKn1TYZ9F1Q',
+    appId: '1:560636044080:web:0a87cff05cb240db2c5ef5',
+    messagingSenderId: '560636044080',
+    projectId: 'root-e1f47',
+    authDomain: 'root-e1f47.firebaseapp.com',
+    databaseURL: 'https://root-e1f47.firebaseio.com',
+    storageBucket: 'root-e1f47.appspot.com',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyADIBd16FAuBqz4vujHC68ibz4u_Lewh5I',
-    appId: '1:1010633075142:android:74ddbbfecacd3f10c82ac7',
-    messagingSenderId: '1010633075142',
-    projectId: 'hivesolar-staging-10f3b',
-    storageBucket: 'hivesolar-staging-10f3b.appspot.com',
+    apiKey: 'AIzaSyBwLDUf3hmG-d_MVlTSKlcf7Ir4J56rdIw',
+    appId: '1:560636044080:android:61f40c8e2b7bc6382c5ef5',
+    messagingSenderId: '560636044080',
+    projectId: 'root-e1f47',
+    databaseURL: 'https://root-e1f47.firebaseio.com',
+    storageBucket: 'root-e1f47.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyAxo7KTXCozWwfRRQWiIRjj38x3MW-8hfQ',
-    appId: '1:614344629280:ios:b862342ae0edab39683045',
-    messagingSenderId: '614344629280',
-    projectId: 'artmini-f5ca4',
-    databaseURL: 'https://artmini-f5ca4-default-rtdb.firebaseio.com',
-    storageBucket: 'artmini-f5ca4.firebasestorage.app',
-    iosBundleId: 'com.hive.hivesolar',
+    apiKey: 'AIzaSyDDSCNNGd_FI7Z87Yizk8xEy7efiLIWqYw',
+    appId: '1:560636044080:ios:abcd09e2265e60b32c5ef5',
+    messagingSenderId: '560636044080',
+    projectId: 'root-e1f47',
+    databaseURL: 'https://root-e1f47.firebaseio.com',
+    storageBucket: 'root-e1f47.appspot.com',
+    androidClientId: '560636044080-2shdp9o19n7nhe4nhesrmn3rv6bucnnq.apps.googleusercontent.com',
+    iosBundleId: 'com.example.hive',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyAxo7KTXCozWwfRRQWiIRjj38x3MW-8hfQ',
-    appId: '1:614344629280:ios:b862342ae0edab39683045',
-    messagingSenderId: '614344629280',
-    projectId: 'artmini-f5ca4',
-    databaseURL: 'https://artmini-f5ca4-default-rtdb.firebaseio.com',
-    storageBucket: 'artmini-f5ca4.firebasestorage.app',
-    iosBundleId: 'com.hive.hivesolar',
+    apiKey: 'AIzaSyDDSCNNGd_FI7Z87Yizk8xEy7efiLIWqYw',
+    appId: '1:560636044080:ios:abcd09e2265e60b32c5ef5',
+    messagingSenderId: '560636044080',
+    projectId: 'root-e1f47',
+    databaseURL: 'https://root-e1f47.firebaseio.com',
+    storageBucket: 'root-e1f47.appspot.com',
+    androidClientId: '560636044080-2shdp9o19n7nhe4nhesrmn3rv6bucnnq.apps.googleusercontent.com',
+    iosBundleId: 'com.example.hive',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyBACj3mXiwDEBZne5LukQhikIRPQIsxnjw',
-    appId: '1:614344629280:web:6ff7d26de360b0a6683045',
-    messagingSenderId: '614344629280',
-    projectId: 'artmini-f5ca4',
-    authDomain: 'artmini-f5ca4.firebaseapp.com',
-    databaseURL: 'https://artmini-f5ca4-default-rtdb.firebaseio.com',
-    storageBucket: 'artmini-f5ca4.firebasestorage.app',
-    measurementId: 'G-X6235M5E7B',
+    apiKey: 'AIzaSyAEEnu6UPEHqfqoF-1mlqPxxgc1Hx_OZHo',
+    appId: '1:560636044080:web:19da82f9fa64b20b2c5ef5',
+    messagingSenderId: '560636044080',
+    projectId: 'root-e1f47',
+    authDomain: 'root-e1f47.firebaseapp.com',
+    databaseURL: 'https://root-e1f47.firebaseio.com',
+    storageBucket: 'root-e1f47.appspot.com',
   );
 
 }
