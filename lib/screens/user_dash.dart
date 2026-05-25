@@ -7,6 +7,7 @@ class UserDash extends StatelessWidget {
 
   void logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
+    if (!context.mounted) return;
 
     Navigator.pushReplacement(
       context,

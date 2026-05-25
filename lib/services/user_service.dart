@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserService {
@@ -20,7 +21,9 @@ class UserService {
         _userCache[uid] = name;
         return name;
       }
-    } catch (e) {}
+    } catch (e) {
+      debugPrint(e.toString());
+    }
 
     return "Unknown";
   }

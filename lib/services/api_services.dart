@@ -1,48 +1,66 @@
-// ============================================================
-// FILE: lib/services/api_service.dart
-//
-// PERFORMANCE FIXES:
-// 1. compute() — JSON parsing moved to a background thread.
-//    This is the #1 fix for "System not responding". Without it,
-//    parsing 500+ records freezes the UI main thread.
-// 2. Future.wait() — HTTP call and Firestore count() run at
-//    the same time instead of one after another.
-// 3. Firestore count() — solaramc-list no longer downloads
-//    every document just to count them.
-// ============================================================
-
 import 'dart:convert';
-import 'package:flutter/foundation.dart'; // for compute()
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/amc_status_model.dart';
-import '../models/support_stats_model.dart';
 import '../models/solar_amc_model.dart';
 import '../models/amc_model.dart';
 
-// ── Top-level parse functions required by compute() ─────────
-// compute() spawns a background thread and calls these functions.
-// They MUST be top-level (outside any class) — this is a Flutter rule.
+class AmcListResult {
+  final List<AmcModel> records;
+  final Map<String, int> summary;
 
-// Parses + sorts the full AMC list in background
+  const AmcListResult({required this.records, required this.summary});
+}
+
+AmcStatusModel _parseAmcStatus(Map<String, dynamic> json) =>
+    AmcStatusModel.fromJson(json);
+
+SolarAmcModel _parseSolarAmc(Map<String, dynamic> json) =>
+    SolarAmcModel.fromJson(json);
+
 List<AmcModel> _parseAmcList(List<dynamic> rawList) {
-  final docs = rawList
+  return rawList
       .map((e) => AmcModel.fromJson(e as Map<String, dynamic>))
       .toList();
-  docs.sort((a, b) => b.id.compareTo(a.id));
-  return docs;
 }
 
-// Parses AMC status model in background
-AmcStatusModel _parseAmcStatus(Map<String, dynamic> json) {
-  return AmcStatusModel.fromJson(json);
+List<Map<String, dynamic>> _flattenAndDedup(
+  Map<String, dynamic> bodyJson,
+  List<String> groups,
+) {
+  final seen = <String>{};
+  final allRecords = <Map<String, dynamic>>[];
+
+  for (final group in groups) {
+    final groupData = bodyJson[group];
+    if (groupData is Map && groupData['data'] is List) {
+      for (final item in groupData['data'] as List) {
+        if (item is Map<String, dynamic>) {
+          final id = item['id']?.toString() ?? '';
+          if (id.isEmpty || seen.add(id)) {
+            allRecords.add(item);
+          }
+        }
+      }
+    }
+  }
+  return allRecords;
 }
 
-// Parses Solar AMC model in background
-SolarAmcModel _parseSolarAmc(Map<String, dynamic> json) {
-  return SolarAmcModel.fromJson(json);
-}
+const _groups = [
+  'active',
+  'expiring',
+  'expired',
+  'isarchive',
+  'notinterested',
+  'completed',
+  'visited',
+  'inprogress',
+  'noClientAvailable',
+  'blank',
+];
 
 class ApiService {
   static const String _amcCountUrl =
@@ -51,11 +69,7 @@ class ApiService {
   static const String _solarCountUrl =
       'https://us-central1-root-e1f47.cloudfunctions.net/getSolarAmcStatusCounts';
 
-  // ── AMC dashboard counts ─────────────────────────────────
   static Future<AmcStatusModel> getAmcStatusCounts() async {
-    // FIX 2: HTTP call and Firestore count() run at the same time.
-    // Before: HTTP ran, then waited to finish, then Firestore ran.
-    // After:  both start together — saves ~1-2 seconds.
     final results = await Future.wait([
       http.get(Uri.parse(_amcCountUrl)),
       FirebaseFirestore.instance
@@ -72,25 +86,17 @@ class ApiService {
       throw Exception('Failed to load AMC status counts');
     }
 
-    // Decode the HTTP body once
     final bodyJson = jsonDecode(response.body) as Map<String, dynamic>;
-
-    // Inject Firestore count into the summary before parsing
     final summary = Map<String, dynamic>.from(
       bodyJson['summary'] as Map<String, dynamic>,
     );
     summary['database'] = countSnap.count ?? 0;
     bodyJson['summary'] = summary;
 
-    // FIX 1: Parse model in background thread — never blocks UI
     return compute(_parseAmcStatus, bodyJson);
   }
 
-  // ── Solar AMC counts ─────────────────────────────────────
   static Future<SolarAmcModel> getSolarAmcStatusCounts() async {
-    // FIX 2: HTTP and Firestore run in parallel
-    // FIX 3: count() downloads zero documents — just returns a number.
-    //        Old code downloaded EVERY solaramc-list document just to count.
     final results = await Future.wait([
       http.get(Uri.parse(_solarCountUrl)),
       FirebaseFirestore.instance
@@ -108,55 +114,82 @@ class ApiService {
     }
 
     final bodyJson = jsonDecode(response.body) as Map<String, dynamic>;
-
     final summary = Map<String, dynamic>.from(
       bodyJson['summary'] as Map<String, dynamic>,
     );
     summary['amcDatabase'] = countSnap.count ?? 0;
     bodyJson['summary'] = summary;
 
-    // FIX 1: Parse in background thread
     return compute(_parseSolarAmc, bodyJson);
   }
 
-  // ── Full Solar AMC list from Firestore ──────────────────
-  // Reads from 'solaramc-list' — same structure as 'amc-list'
-  // so it reuses AmcModel and _parseAmcList directly.
-  static Future<List<AmcModel>> fetchSolarAmcList() async {
-    final snap = await FirebaseFirestore.instance
-        .collection('solaramc-list')
-        .where('isdeleted', isEqualTo: false)
-        .get();
+  static const String _amcListUrl =
+      'https://us-central1-root-e1f47.cloudfunctions.net/getProdAmcList';
 
-    final rawList = snap.docs.map((doc) {
-      final data = doc.data();
-      data['id'] = doc.id;
-      return data;
-    }).toList();
+  static Future<AmcListResult> fetchAmcList() async {
+    // Run both API calls in parallel — no sequential waits
+    final results = await Future.wait([
+      http.get(Uri.parse(_amcCountUrl)), // existing — all summary values
+      http.get(Uri.parse(_amcListUrl)), // second API — correct inprogress count
+    ]);
 
-    // ✅ Parse in background thread — same as fetchAmcList()
-    return compute(_parseAmcList, rawList);
+    final response = results[0] as http.Response;
+    final listResponse = results[1] as http.Response;
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load AMC list');
+    }
+
+    final bodyJson = jsonDecode(response.body) as Map<String, dynamic>;
+
+    final rawSummary = bodyJson['summary'] as Map<String, dynamic>? ?? {};
+    final summary = <String, int>{};
+    rawSummary.forEach((key, value) {
+      summary[key] = (value as num?)?.toInt() ?? 0;
+    });
+
+    final allRecords = _flattenAndDedup(bodyJson, _groups);
+    final records = await compute(_parseAmcList, allRecords);
+
+    // ✅ Override inprogress with correct value from second API
+    // Angular uses getProdAmcList response.summary.inprogress — matches 118
+    if (listResponse.statusCode == 200) {
+      final listJson = jsonDecode(listResponse.body) as Map<String, dynamic>;
+
+      // 🔥 DEBUG HERE
+      print("========= LIST API SUMMARY =========");
+      print(listJson['summary']);
+      print("========= INPROGRESS DATA LENGTH =========");
+      print((listJson['inprogress']?['data'] as List<dynamic>?)?.length);
+      print("==========================================");
+
+      final listSummary = listJson['summary'] as Map<String, dynamic>?;
+
+      if (listSummary != null && listSummary['inprogress'] != null) {
+        summary['inprogress'] = (listSummary['inprogress'] as num).toInt();
+      }
+    }
+
+    return AmcListResult(records: records, summary: summary);
   }
 
-  // ── Full AMC list ────────────────────────────────────────
-  static Future<List<AmcModel>> fetchAmcList() async {
-    final snap = await FirebaseFirestore.instance
-        .collection('amc-list')
-        .where('isdeleted', isEqualTo: false)
-        .get();
+  static Future<AmcListResult> fetchSolarAmcList() async {
+    final response = await http.get(Uri.parse(_solarCountUrl));
 
-    // Convert Firestore docs to plain Dart maps first.
-    // compute() can only receive plain Dart types — not Firestore objects.
-    final rawList = snap.docs.map((doc) {
-      final data = doc.data();
-      data['id'] = doc.id;
-      return data;
-    }).toList();
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load Solar AMC list');
+    }
 
-    // FIX 1: All parsing + sorting runs in background thread.
-    // This is the biggest cause of "System not responding" —
-    // mapping 500+ Firestore docs to AmcModel on the main thread
-    // was locking up the UI completely.
-    return compute(_parseAmcList, rawList);
+    final bodyJson = jsonDecode(response.body) as Map<String, dynamic>;
+
+    final rawSummary = bodyJson['summary'] as Map<String, dynamic>? ?? {};
+    final summary = <String, int>{};
+    rawSummary.forEach((key, value) {
+      summary[key] = (value as num?)?.toInt() ?? 0;
+    });
+
+    final allRecords = _flattenAndDedup(bodyJson, _groups);
+    final records = await compute(_parseAmcList, allRecords);
+    return AmcListResult(records: records, summary: summary);
   }
 }
